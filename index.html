@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Иман PRO MAX</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Amiri&display=swap" rel="stylesheet">
+
+<style>
+body{
+margin:0;
+font-family:Montserrat;
+background:#0f172a;
+color:white;
+}
+
+header{
+text-align:center;
+padding:20px;
+background:#111827;
+font-weight:bold;
+}
+
+.section{display:none;padding:20px;}
+.active{display:block;}
+
+.card{
+background:#1e293b;
+padding:20px;
+border-radius:15px;
+margin-bottom:20px;
+}
+
+h2{color:#fbbf24;}
+
+button{
+background:#fbbf24;
+border:none;
+padding:8px 15px;
+border-radius:8px;
+cursor:pointer;
+margin-top:10px;
+}
+
+select,input{
+width:100%;
+padding:8px;
+border-radius:8px;
+margin-bottom:10px;
+border:none;
+}
+
+.arabic{
+font-family:'Amiri', serif;
+font-size:22px;
+direction:rtl;
+text-align:right;
+margin:10px 0;
+}
+
+.bottom-menu{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:#111827;
+display:flex;
+justify-content:space-around;
+padding:10px;
+}
+
+.bottom-menu button{
+background:none;
+color:#fbbf24;
+font-size:14px;
+}
+.option{
+background:#334155;
+padding:8px;
+border-radius:8px;
+margin:5px 0;
+cursor:pointer;
+}
+.option:hover{background:#475569;}
+</style>
+</head>
+<body>
+
+<header>🕌 МҰСЫЛМАН ҚОРҒАНЫ </header>
+
+<!-- ҚҰРАН -->
+<div id="quran" class="section active">
+<div class="card">
+<h2>📖 Құран</h2>
+<select id="suraSelect"></select>
+<button onclick="loadSura()">Оқу</button>
+<div id="quranBox"></div>
+</div>
+</div>
+
+<!-- КУИЗ -->
+<div id="quiz" class="section">
+<div class="card">
+<h2>🧠 Ислам Quiz</h2>
+<div id="quizBox"></div>
+<button onclick="nextQuestion()">Келесі</button>
+<p id="score"></p>
+</div>
+</div>
+
+<!-- АССИСТЕНТ -->
+<div id="ask" class="section">
+<div class="card">
+<h2>🤖 Ислам Ассистент</h2>
+<input type="text" id="questionInput" placeholder="Сұрағыңызды жазыңыз...">
+<button onclick="answerQuestion()">Сұрау</button>
+<p id="answerBox"></p>
+</div>
+</div>
+
+<div class="bottom-menu">
+<button onclick="show('quran')">Құран</button>
+<button onclick="show('quiz')">Quiz</button>
+<button onclick="show('ask')">Сұрақ</button>
+</div>
+
+<script>
+
+// меню
+function show(id){
+document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+}
+
+/* ===== СУРЫ 114 ===== */
+const suraNames = [
+"1. Аль-Фатиха","2. Аль-Бакара","3. Али Имран","4. Ан-Ниса","5. Аль-Маида",
+"6. Аль-Анам","7. Аль-Араф","8. Аль-Анфаль","9. Ат-Тауба","10. Юнус",
+"11. Худ","12. Юсуф","13. Ар-Раад","14. Ибрахим","15. Аль-Хиджр",
+"16. Ан-Нахль","17. Аль-Исра","18. Аль-Кахф","19. Марьям","20. Та-Ха",
+"21. Аль-Анбия","22. Аль-Хадж","23. Аль-Муминун","24. Ан-Нур","25. Аль-Фуркан",
+"26. Аш-Шуара","27. Ан-Намль","28. Аль-Касас","29. Аль-Анкабут","30. Ар-Рум",
+"31. Лукман","32. Ас-Саджда","33. Аль-Ахзаб","34. Саба","35. Фатыр",
+"36. Ясин","37. Ас-Саффат","38. Сад","39. Аз-Зумар","40. Гафир",
+"41. Фуссилат","42. Аш-Шура","43. Аз-Зухруф","44. Ад-Духан","45. Аль-Джасия",
+"46. Аль-Ахкаф","47. Мухаммад","48. Аль-Фатх","49. Аль-Худжурат","50. Каф",
+"51. Аз-Зарият","52. Ат-Тур","53. Ан-Наджм","54. Аль-Камар","55. Ар-Рахман",
+"56. Аль-Вакиа","57. Аль-Хадид","58. Аль-Муджадила","59. Аль-Хашр","60. Аль-Мумтахина",
+"61. Ас-Сафф","62. Аль-Джума","63. Аль-Мунафикун","64. Ат-Тагабун","65. Ат-Талак",
+"66. Ат-Тахрим","67. Аль-Мульк","68. Аль-Калам","69. Аль-Хакка","70. Аль-Мааридж",
+"71. Нух","72. Аль-Джинн","73. Аль-Муззаммиль","74. Аль-Муддассир","75. Аль-Кияма",
+"76. Аль-Инсан","77. Аль-Мурсалят","78. Ан-Наба","79. Ан-Назиат","80. Абаса",
+"81. Ат-Таквир","82. Аль-Инфитар","83. Аль-Мутаффифин","84. Аль-Иншикак","85. Аль-Буруж",
+"86. Ат-Тарик","87. Аль-Аля","88. Аль-Гашия","89. Аль-Фаджр","90. Аль-Балад",
+"91. Аш-Шамс","92. Аль-Лейль","93. Ад-Духа","94. Аш-Шарх","95. Ат-Тин",
+"96. Аль-Алак","97. Аль-Кадр","98. Аль-Баййина","99. Аз-Залзала","100. Аль-Адият",
+"101. Аль-Кариа","102. Ат-Такатур","103. Аль-Аср","104. Аль-Хумаза","105. Аль-Филь",
+"106. Курайш","107. Аль-Маун","108. Аль-Каусар","109. Аль-Кафирун","110. Ан-Наср",
+"111. Аль-Масад","112. Аль-Ихлас","113. Аль-Фаляк","114. Ан-Нас"
+];
+
+for(let i=0;i<suraNames.length;i++){
+let option=document.createElement("option");
+option.value=i+1;
+option.text=suraNames[i];
+document.getElementById("suraSelect").appendChild(option);
+}
+
+// загрузка сур
+async function loadSura(){
+let sura=document.getElementById("suraSelect").value;
+let box=document.getElementById("quranBox");
+box.innerHTML="Жүктелуде...";
+let res=await fetch(`https://api.alquran.cloud/v1/surah/${sura}/editions/quran-uthmani,ru.kuliev`);
+let data=await res.json();
+let arab=data.data[0].ayahs;
+let ru=data.data[1].ayahs;
+box.innerHTML="";
+for(let i=0;i<arab.length;i++){
+box.innerHTML+=`
+<div>
+<span class="arabic">${arab[i].text}</span>
+<p>${ru[i].text}</p>
+<hr>
+</div>`;
+}
+}
+
+/* ===== QUIZ 20 ===== */
+const quizData=[
+{q:"Сколько столпов Ислама?",a:["3","4","5","6"],c:2},
+{q:"Первая сура Корана?",a:["Бакара","Фатиха","Ихлас","Ясин"],c:1},
+{q:"Сколько фарз намазов в день?",a:["3","4","5","6"],c:2},
+{q:"Как зовут пророка Ислама?",a:["Муса","Иса","Мухаммад ﷺ","Ибрахим"],c:2},
+{q:"Священная ночь Рамадана?",a:["Кадр","Мирадж","Бараат","Ашура"],c:0},
+{q:"Сколько аятов в Фатихе?",a:["5","6","7","8"],c:2},
+{q:"Город рождения пророка?",a:["Медина","Мекка","Куфа","Дамаск"],c:1},
+{q:"Обязательная милостыня?",a:["Садака","Закят","Фитр","Хадж"],c:1},
+{q:"Пост месяца?",a:["Шаабан","Рамадан","Зульхиджа","Мухаррам"],c:1},
+{q:"Направление молитвы?",a:["Иерусалим","Кибла","Мекка","Медина"],c:1},
+{q:"Сколько ангелов записывают дела?",a:["1","2","3","4"],c:1},
+{q:"Книга до Корана?",a:["Тора","Псалмы","Евангелие","Все"],c:3},
+{q:"Сколько сур?",a:["110","112","114","120"],c:2},
+{q:"Последняя сура?",a:["Фаляк","Нас","Ихлас","Кадр"],c:1},
+{q:"Столп хаджа?",a:["Умра","Тауаф","Итикаф","Киям"],c:1},
+{q:"Сколько пророков упомянуто?",a:["20","25","30","40"],c:1},
+{q:"Ангел откровения?",a:["Микаил","Исрафил","Джибриль","Азраиль"],c:2},
+{q:"Молитва в пятницу?",a:["Джума","Тахаджуд","Витр","Таравих"],c:0},
+{q:"Сколько фарз в Фаджр?",a:["2","3","4","5"],c:0},
+{q:"Священный город?",a:["Мекка","Каир","Стамбул","Тегеран"],c:0}
+];
+
+let current=0,score=0;
+
+function loadQuiz(){
+let q=quizData[current];
+let box=document.getElementById("quizBox");
+box.innerHTML=`<p>${q.q}</p>`;
+q.a.forEach((opt,i)=>{
+box.innerHTML+=`<div class="option" onclick="check(${i})">${opt}</div>`;
+});
+}
+function check(i){
+if(i===quizData[current].c){score++;alert("Дұрыс!");}
+else{alert("Қате!");}
+}
+function nextQuestion(){
+current++;
+if(current<quizData.length) loadQuiz();
+else document.getElementById("quizBox").innerHTML="Аяқталды!";
+document.getElementById("score").innerText="Ұпай: "+score;
+}
+loadQuiz();
+
+/* ===== АССИСТЕНТ ===== */
+function answerQuestion(){
+let q=document.getElementById("questionInput").value.toLowerCase();
+let ans="Нақтырақ сұрақ қойыңыз.";
+if(q.includes("намаз")) ans="Намаз — Исламның 5 парызының бірі.";
+if(q.includes("ораза")) ans="Ораза Рамазан айында ұсталады.";
+if(q.includes("закят")) ans="Закят — міндетті садақа.";
+if(q.includes("хадж")) ans="Хадж — Меккеге қажылық.";
+document.getElementById("answerBox").innerText=ans;
+}
+
+</script>
+</body>
+</html>
+<!-- ===== АЯТ ДНЯ ===== -->
+<div id="ayahDay" class="section">
+  <div class="card">
+    <h2>🌙 Аят дня</h2>
+    <div id="ayahBox">Загрузка...</div>
+    <button onclick="loadAyahDay()">Обновить</button>
+  </div>
+</div>
+
+<!-- ===== ВРЕМЯ НАМАЗА ===== -->
+<div id="prayTime" class="section">
+  <div class="card">
+    <h2>🕋 Время намаза в городах Казахстана</h2>
+    <select id="citySelect">
+      <option value="almaty">Алматы</option>
+      <option value="astana">Нур-Султан</option>
+      <option value="shymkent">Шымкент</option>
+      <option value="karaganda">Караганда</option>
+      <option value="atyrau">Атырау</option>
+    </select>
+    <div id="prayBox">Выберите город</div>
+  </div>
+</div>
+
+<!-- ===== ЗИКР И 99 ИМЕН ===== -->
+<div id="zikr" class="section">
+  <div class="card">
+    <h2>📿 Зикр и 99 имен Аллаха</h2>
+    <select id="zikrSelect">
+      <option value="kalima">Калима</option>
+      <option value="subhanallah">Субханалла</option>
+      <option value="salaawat">Салауат</option>
+      <option value="allNames">99 имен Аллаха</option>
+    </select>
+    <div id="zikrBox"></div>
+    <button onclick="loadZikr()">Показать</button>
+  </div>
+</div>
+
+<!-- ===== ДУА ===== -->
+<div id="dua" class="section">
+  <div class="card">
+    <h2>🙏 Дуа</h2>
+    <select id="duaSelect">
+      <option value="beforeEating">Перед едой</option>
+      <option value="afterEating">После еды</option>
+      <option value="beforeSleep">Перед сном</option>
+      <option value="afterSleep">После сна</option>
+      <option value="beforeExit">Перед выходом из дома</option>
+      <option value="afterEnter">После входа в дом</option>
+    </select>
+    <div id="duaBox"></div>
+    <button onclick="loadDua()">Показать</button>
+  </div>
+</div>
+
+<!-- ===== РАЗБОР НАМАЗА ===== -->
+<div id="namaz" class="section">
+  <div class="card">
+    <h2>🕌 Разбор намаза</h2>
+    <div id="namazBox">
+      <h3>5 парызов для мусульман</h3>
+      <ul>
+        <li>Шахада — вера</li>
+        <li>Намаз — молитва</li>
+        <li>Закят — милостыня</li>
+        <li>Ораза — пост</li>
+        <li>Хадж — паломничество</li>
+      </ul>
+      <h3>Как читать намаз</h3>
+      <p>Начало с такбира, чтение аль-Фатиха, руку, сажда, ташаххуд, салам.</p>
+      <h3>Суннеты</h3>
+      <p>Суннеты — дополнительные молитвы, рекомендованы, но не обязательны.</p>
+      <h3>Жума, Тарауих, Тахаджуд</h3>
+      <p>Жума — пятничная молитва, обязательна для мужчин. Тарауих — ночные молитвы в Рамадан. Тахаджуд — ночные молитвы.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== ФОН МЕККА =====
+document.body.style.backgroundImage = "url('https://upload.wikimedia.org/wikipedia/commons/c/c2/Kaaba_Masjid_al-Haram.jpg')";
+document.body.style.backgroundSize = "cover";
+document.body.style.backgroundPosition = "center";
+
+// ===== АЯТ ДНЯ =====
+async function loadAyahDay(){
+  let box = document.getElementById("ayahBox");
+  box.innerText = "Загрузка...";
+  let res = await fetch("https://api.alquran.cloud/v1/ayah/random");
+  let data = await res.json();
+  box.innerHTML = `<span class="arabic">${data.data.text}</span><p>${data.data.surah.name}</p>`;
+}
+
+// ===== ВРЕМЯ НАМАЗА =====
+const prayTimes = {
+  almaty: {Fajr:"05:10", Dhuhr:"12:45", Asr:"16:15", Maghrib:"19:10", Isha:"20:30"},
+  astana: {Fajr:"05:30", Dhuhr:"13:00", Asr:"16:30", Maghrib:"19:20", Isha:"20:40"},
+  shymkent: {Fajr:"05:05", Dhuhr:"12:40", Asr:"16:10", Maghrib:"19:05", Isha:"20:25"},
+  karaganda: {Fajr:"05:20", Dhuhr:"12:55", Asr:"16:25", Maghrib:"19:15", Isha:"20:35"},
+  atyrau: {Fajr:"05:00", Dhuhr:"12:35", Asr:"16:05", Maghrib:"18:55", Isha:"20:15"}
+};
+document.getElementById("citySelect").addEventListener("change", ()=>{
+  let city = document.getElementById("citySelect").value;
+  let times = prayTimes[city];
+  let box = document.getElementById("prayBox");
+  box.innerHTML = `<ul>
+    <li>Фаджр: ${times.Fajr}</li>
+    <li>Зухр: ${times.Dhuhr}</li>
+    <li>Аср: ${times.Asr}</li>
+    <li>Магриб: ${times.Maghrib}</li>
+    <li>Иша: ${times.Isha}</li>
+  </ul>`;
+});
+document.getElementById("citySelect").dispatchEvent(new Event("change"));
+
+// ===== ЗИКР И 99 ИМЕН =====
+const zikrs = {
+  kalima:"Ля иляха илляллах, Мухаммадур Расулюллах",
+  subhanallah:"СубханАллах",
+  salaawat:"Аллахумма салли 'ала Мухаммад",
+  allNames:["Ар-Рахман","Ар-Рахим","Аль-Малик","Аль-Куддус","Ас-Салям","Аль-Му’мин","Аль-Мухаймин","Аль-Азиз","Аль-Джаббар","Аль-Мутаккебир","Аль-Халик","Аль-Бари","Аль-Мусаввир","Аль-Гафур","Аль-Раззак","..."] // можно добавить все 99
+};
+function loadZikr(){
+  let val = document.getElementById("zikrSelect").value;
+  let box = document.getElementById("zikrBox");
+  if(val=="allNames") box.innerHTML = "<ol>"+zikrs.allNames.map(n=>"<li>"+n+"</li>").join("")+"</ol>";
+  else box.innerText = zikrs[val];
+}
+
+// ===== ДУА =====
+const duas = {
+  beforeEating:"Бисмиллях",
+  afterEating:"Альхамдулиллах",
+  beforeSleep:"Бисмиллях ва ахяйно ва амвато",
+  afterSleep:"Альхамдулиллах",
+  beforeExit:"Бисмиллях, туху ля хаула ва ля куввата илля биллях",
+  afterEnter:"Альхамдулиллах"
+};
+function loadDua(){
+  let val = document.getElementById("duaSelect").value;
+  document.getElementById("duaBox").innerText = duas[val];
+}
+</script>
+<button onclick="show('ayahDay')">Аят дня</button>
+<button onclick="show('prayTime')">Намаз</button>
+<button onclick="show('zikr')">Зикр</button>
+<button onclick="show('dua')">Дуа</button>
+<button onclick="show('namaz')">Разбор намаза</button>
+<!-- ===== ОБНОВЛЁННЫЙ СТИЛЬ ===== -->
+<style>
+body {
+  background: url('https://upload.wikimedia.org/wikipedia/commons/c/c2/Kaaba_Masjid_al-Haram.jpg') no-repeat center center fixed;
+  background-size: cover;
+  font-family: 'Montserrat', sans-serif;
+  color: #f1f5f9;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(15, 23, 42, 0.85); /* затемнение */
+  z-index: -1;
+}
+
+.card {
+  background: rgba(30, 41, 59, 0.9);
+  padding: 25px;
+  border-radius: 20px;
+  margin: 20px auto;
+  max-width: 800px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.7);
+}
+
+h2 {
+  color: #fbbf24;
+  font-size: 28px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.arabic {
+  font-family: 'Amiri', serif;
+  font-size: 24px;
+  color: #fde68a;
+  direction: rtl;
+  text-align: right;
+  margin: 12px 0;
+}
+
+button {
+  background: #fbbf24;
+  color: #0f172a;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #f59e0b;
+}
+
+select, input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: none;
+  font-size: 16px;
+}
+
+.bottom-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(17, 24, 39, 0.95);
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 0;
+  z-index: 10;
+}
+
+.bottom-menu button {
+  background: none;
+  color: #fbbf24;
+  font-size: 15px;
+}
+
+.option {
+  background: rgba(51, 65, 85, 0.8);
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px 0;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.option:hover {
+  background: rgba(71, 85, 105, 0.8);
+}
+
+ul, ol {
+  padding-left: 20px;
+}
+
+p, li {
+  line-height: 1.6;
+  font-size: 16px;
+}
+</style>
+<!-- ===== ИСЛАМСКИЙ КАЛЕНДАРЬ ===== -->
+<div id="calendar" class="section">
+  <div class="card">
+    <h2>📅 Исламский Календарь (Хиджри)</h2>
+    <ol id="hijriMonths">
+      <li>1. Муhаррам</li>
+      <li>2. Сафар</li>
+      <li>3. Раби’уль-авваль</li>
+      <li>4. Раби’уль-тахир</li>
+      <li>5. Джумада-уль-авваль</li>
+      <li>6. Джумада-уль-тахир</li>
+      <li>7. Раджаб</li>
+      <li>8. Шаабан</li>
+      <li>9. Рамадан 🌙</li>
+      <li>10. Шавваль</li>
+      <li>11. Зуль-Ка’да</li>
+      <li>12. Зуль-Хиджа</li>
+    </ol>
+    <p>🌙 Рамадан — месяц поста, Зуль-Хиджа — месяц хаджа.</p>
+  </div>
+</div>
+<div class="bottom-menu">
+  <button onclick="show('quran')">Құран</button>
+  <button onclick="show('quiz')">Quiz</button>
+  <button onclick="show('ask')">Сұрақ</button>
+  <button onclick="show('calendar')">Календарь</button>
+</div>
+<!-- РАМАДАН КАЛЕНДАРЬ -->
+<div id="ramadanCalendar" class="section">
+  <div class="card">
+    <h2>🌙 Рамадан 2026 — Календарь (Нур-Султан)</h2>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; color:white; text-align:center;">
+        <thead>
+          <tr style="background:#1e293b;">
+            <th>Күн</th>
+            <th>Сухур (Fajr)</th>
+            <th>Ифтар (Maghrib)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1 (18 Feb)</td><td>05:31</td><td>17:35</td></tr>
+          <tr><td>2 (19 Feb)</td><td>05:29</td><td>17:37</td></tr>
+          <tr><td>3 (20 Feb)</td><td>05:27</td><td>17:39</td></tr>
+          <tr><td>4 (21 Feb)</td><td>05:25</td><td>17:41</td></tr>
+          <tr><td>5 (22 Feb)</td><td>05:23</td><td>17:43</td></tr>
+          <tr><td>6 (23 Feb)</td><td>05:21</td><td>17:45</td></tr>
+          <tr><td>7 (24 Feb)</td><td>05:19</td><td>17:47</td></tr>
+          <tr><td>8 (25 Feb)</td><td>05:17</td><td>17:49</td></tr>
+          <tr><td>9 (26 Feb)</td><td>05:15</td><td>17:51</td></tr>
+          <tr><td>10 (27 Feb)</td><td>05:13</td><td>17:53</td></tr>
+          <tr><td>11 (28 Feb)</td><td>05:11</td><td>17:55</td></tr>
+          <tr><td>12 (1 Mar)</td><td>05:09</td><td>17:57</td></tr>
+          <tr><td>13 (2 Mar)</td><td>05:07</td><td>17:59</td></tr>
+          <tr><td>14 (3 Mar)</td><td>05:05</td><td>18:01</td></tr>
+          <tr><td>15 (4 Mar)</td><td>05:03</td><td>18:03</td></tr>
+          <tr><td>16 (5 Mar)</td><td>05:01</td><td>18:05</td></tr>
+          <tr><td>17 (6 Mar)</td><td>04:59</td><td>18:07</td></tr>
+          <tr><td>18 (7 Mar)</td><td>04:56</td><td>18:09</td></tr>
+          <tr><td>19 (8 Mar)</td><td>04:54</td><td>18:11</td></tr>
+          <tr><td>20 (9 Mar)</td><td>04:52</td><td>18:13</td></tr>
+          <tr><td>21 (10 Mar)</td><td>04:50</td><td>18:15</td></tr>
+          <tr><td>22 (11 Mar)</td><td>04:48</td><td>18:17</td></tr>
+          <tr><td>23 (12 Mar)</td><td>04:46</td><td>18:19</td></tr>
+          <tr><td>24 (13 Mar)</td><td>04:44</td><td>18:21</td></tr>
+          <tr><td>25 (14 Mar)</td><td>04:42</td><td>18:23</td></tr>
+          <tr><td>26 (15 Mar)</td><td>04:40</td><td>18:25</td></tr>
+          <tr><td>27 (16 Mar)</td><td>04:38</td><td>18:27</td></tr>
+          <tr><td>28 (17 Mar)</td><td>04:36</td><td>18:29</td></tr>
+          <tr><td>29 (18 Mar)</td><td>04:34</td><td>18:31</td></tr>
+          <tr><td>30 (19 Mar)</td><td>04:32</td><td>18:33</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- ИНТЕРЕСНЫЕ ФАКТЫ -->
+<div id="facts" class="section">
+  <div class="card">
+    <h2>📜 100 Интересных Фактов про Ислам</h2>
+    <div id="factBox"></div>
+    <button onclick="prevFact()">⬅ Алдыңғы</button>
+    <button onclick="nextFact()">Келесі ➡</button>
+    <p id="factCounter"></p>
+  </div>
+</div>
+
+<!-- Добавляем кнопку в меню -->
+<div class="bottom-menu">
+  <button onclick="show('quran')">Құран</button>
+  <button onclick="show('quiz')">Quiz</button>
+  <button onclick="show('ask')">Сұрақ</button>
+  <button onclick="show('facts')">Факты</button>
+</div>
+
+<script>
+// ===== Меню =====
+function show(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===== Факты про Ислам =====
+const facts = [
+"Ислам — вторая по численности религия в мире.",
+"Мусульмане верят в одного Бога — Аллаха.",
+"Коран состоит из 114 сур.",
+"Мухаммад ﷺ — последний пророк Ислама.",
+"Пять столпов Ислама: Шахада, Намаз, Закят, Ораза, Хадж.",
+"Мекка — священный город для мусульман.",
+"Медина — место хиджры пророка Мухаммада ﷺ.",
+"Пост Рамадан длится с рассвета до заката.",
+"Закят — обязательная милостыня.",
+"Хадж — паломничество в Мекку, обязательное хотя бы раз в жизни для мусульман.",
+"Намаз совершается пять раз в день.",
+"Салаат (Намаз) начинается с намерения и такбиру-тахрима.",
+"Молитва Джума совершается только в пятницу.",
+"Тарауих — ночная молитва в месяц Рамадан.",
+"Тахаджуд — ночная добровольная молитва после сна.",
+"Исламские молитвы можно читать на арабском языке.",
+"Существует 99 имен Аллаха, каждое отражает Его качество.",
+"Кибла — направление молитвы на Каабу в Мекке.",
+"Суры можно читать с тажвидом (правила чтения).",
+"Ораза укрепляет самодисциплину и духовность.",
+"Мусульмане отмечают два главных праздника: Ид аль-Фитр и Ид аль-Адха.",
+"Сахаба — сподвижники пророка Мухаммада ﷺ.",
+"Коран был ниспослан в течение 23 лет.",
+"Сура Аль-Фатиха читается в каждом намазе.",
+"Сура Аль-Ихлас описывает единство Аллаха.",
+"Каждая сура Корана имеет особое значение.",
+"Молитва помогает очищать сердце и мысли.",
+"Салават — это приветствие пророку ﷺ.",
+"Ислам учит милосердию и честности.",
+"Халяль — разрешённая пища для мусульман.",
+"Харам — запрещённая пища и действия.",
+"Существуют обязательные (фарз) и добровольные (сунна) молитвы.",
+"Ислам поощряет образование и знания.",
+"Побеждать гнев и соблюдать терпение — качества верующего.",
+"Фидия и каффара — компенсация за пропущенный пост.",
+"Пророки учат людей поклоняться только Аллаху.",
+"Медина — первый исламский город.",
+"Сахур — предрассветная еда перед постом.",
+"Ифтар — вечерний приём пищи для разрыва поста.",
+"Зикр — поминание Аллаха.",
+"Калима — вероисповедание мусульманина.",
+"Дуа — личная молитва, обращение к Аллаху.",
+"Сура Ясин называется сердцем Корана.",
+"Сура Аль-Кадр описывает ночь предопределения.",
+"Сура Аль-Бакара содержит много законов и наставлений.",
+"Сура Аль-Маида описывает запреты и дозволения.",
+"Пост обучает самоконтролю и состраданию.",
+"Пятничная молитва обязательна для мужчин.",
+"Молитва на Тарауих совершается ночью в Рамадан.",
+"Молитва Витр — завершающая ночная молитва.",
+"Тахаджуд читается после ночного сна для духовного роста.",
+"Закят очищает имущество и помогает бедным.",
+"Хадж совершается в определённое время года.",
+"Ислам призывает к честной торговле.",
+"Пророк ﷺ говорил о важности добрых дел.",
+"Мусульмане должны уважать родителей.",
+"Ислам запрещает пьянство и азартные игры.",
+"Мусульмане приветствуют друг друга словами «Ассаляму алейкум».",
+"Аллах прощает грехи покаявшихся.",
+"Сура Ан-Нас и Аль-Фаляк защищают от зла.",
+"Молитва защищает от шайтана.",
+"Существует обязательный хадж и умра (малый хадж).",
+"Ислам поощряет помощь нуждающимся.",
+"Существуют молитвы перед едой и после еды.",
+"Мусульмане должны изучать Коран с тажвидом.",
+"Салафы — праведные предшественники мусульман.",
+"Пророк ﷺ учил терпению и состраданию.",
+"Ислам запрещает несправедливость и насилие.",
+"Рамадан — месяц, когда Коран был ниспослан.",
+"Мусульмане отмечают ночь Кадр.",
+"Намаз состоит из поклонов (ракат).",
+"Фарз — обязательные действия.",
+"Сунна — действия пророка ﷺ, которые желательно повторять.",
+"Мусульмане читают дуа при входе и выходе из дома.",
+"Мусульмане читают дуа перед сном и после сна.",
+"Существуют молитвы перед путешествием.",
+"Ислам учит заботе о чистоте тела и одежды.",
+"Мусульмане обязаны соблюдать законы своей страны.",
+"Существуют пять обязательных молитв (фарз): Фаджр, Зухр, Аср, Магриб, Иша.",
+"Каждый мусульманин обязан стремиться к знанию.",
+"Коран учит справедливости и милосердию.",
+"Пророк ﷺ говорил о важности чистоты сердца.",
+"Мусульмане читают суру Аль-Фатиха в каждом ракате.",
+"Ислам поощряет добрые намерения.",
+"Существуют сунны перед и после обязательных молитв.",
+"Мусульмане соблюдают Рамадан с намерением.",
+"Закят равен 2.5% от накопленного имущества.",
+"Хадж включает обход Каабы семь раз.",
+"Мусульмане читают утренние и вечерние зикры.",
+"Коран читается во время Тарауих.",
+"Сура Аль-Ихлас символизирует единство Аллаха.",
+"Мусульмане учат детей молитве с раннего возраста.",
+"Ислам запрещает несправедливые налоги.",
+"Мусульмане стремятся к честной жизни.",
+"Фаджр — утренняя молитва до рассвета.",
+"Зухр — дневная молитва.",
+"Аср — послеобеденная молитва.",
+"Магриб — вечерняя молитва после захода солнца.",
+"Иша — ночная обязательная молитва.",
+"Дуа помогает просить прощения и благословения.",
+"Зикр помогает помнить Аллаха в течение дня.",
+"Мусульмане почитают Пророка ﷺ и его хадисы."
+];
+
+let currentFact = 0;
+
+function showFact(){
+  document.getElementById("factBox").innerText = facts[currentFact];
+  document.getElementById("factCounter").innerText = (currentFact+1) + " / " + facts.length;
+}
+
+function nextFact(){
+  if(currentFact < facts.length - 1) currentFact++;
+  else currentFact = 0;
+  showFact();
+}
+
+function prevFact(){
+  if(currentFact > 0) currentFact--;
+  else currentFact = facts.length - 1;
+  showFact();
+}
+
+// Показываем первый факт сразу
+showFact();
+</script>
+<!-- ФАКТЫ О ПРОРОКЕ МУХАММАДЕ ﷺ -->
+<div id="prophetFacts" class="section">
+  <div class="card">
+    <h2>📜 Факты о Пророке Мухаммаде ﷺ</h2>
+    <div id="prophetFactBox"></div>
+    <button onclick="prevProphetFact()">⬅ Алдыңғы</button>
+    <button onclick="nextProphetFact()">Келесі ➡</button>
+    <p id="prophetFactCounter"></p>
+  </div>
+</div>
+
+<!-- Добавляем кнопку в нижнее меню -->
+<div class="bottom-menu">
+  <button onclick="show('quran')">Құран</button>
+  <button onclick="show('quiz')">Quiz</button>
+  <button onclick="show('ask')">Сұрақ</button>
+  <button onclick="show('facts')">Факты</button>
+  <button onclick="show('prophetFacts')">Пророк ﷺ</button>
+</div>
+
+<script>
+// ===== Факты о Пророке Мухаммаде ﷺ =====
+const prophetFacts = [
+"Пророк Мухаммад ﷺ родился в 570 году в Мекке.",
+"Он принадлежал к племени Курейш.",
+"Сын его был Ибрагим.",
+"Пророк ﷺ получил первое откровение в пещере Хира.",
+"Ему было 40 лет, когда началась миссия пророчества.",
+"Пророк ﷺ был известен честностью до миссии (Аль-Амин).",
+"Он был сиротой, воспитывался дедом, а потом дядей.",
+"Мухаммад ﷺ женился на Хадидже, которая была его опорой.",
+"Он был терпеливым и милосердным по отношению к людям.",
+"Пророк ﷺ совершал ночные молитвы (тахаджуд) регулярно.",
+"Он учил заботе о бедных и сиротах.",
+"Мухаммад ﷺ поощрял образование и знание.",
+"Пророк ﷺ запретил пьянство и азартные игры.",
+"Он учил прощению даже врагов.",
+"Пророк ﷺ совершал хадж и умру.",
+"Он читал Коран и объяснял его людям.",
+"Сура Аль-Фатиха была очень важна для него.",
+"Пророк ﷺ был примером справедливости и честности.",
+"Он говорил о важности чистоты и гигиены.",
+"Пророк ﷺ поощрял чтение зикра и молитвы.",
+"Он учил правильному выполнению намаза.",
+"Мухаммад ﷺ проявлял сострадание к животным.",
+"Он поощрял честную торговлю.",
+"Пророк ﷺ был примером добродетели и терпения.",
+"Он учил уважению к родителям и старшим.",
+"Пророк ﷺ защищал права женщин и детей.",
+"Он говорил о важности соблюдения праведного пути.",
+"Пророк ﷺ обращался с людьми мягко и с пониманием.",
+"Он учил следовать сунне и Корану.",
+"Пророк ﷺ путешествовал, проповедуя Ислам.",
+"Он наставлял сподвижников и общину.",
+"Пророк ﷺ говорил о необходимости соблюдения пяти столпов Ислама.",
+"Он учил быть благодарным и терпеливым.",
+"Пророк ﷺ наставлял на добрые дела и честность.",
+"Он был прощен для своих врагов после победы в Мекке.",
+"Пророк ﷺ уделял внимание духовному и физическому развитию.",
+"Он читал дуа и зикры ежедневно.",
+"Пророк ﷺ поощрял добрые намерения и действия.",
+"Он объяснял важность Джума и других молитв.",
+"Пророк ﷺ наставлял, как совершать Тарауих и Иша.",
+"Он говорил о значении Рамадана и поста.",
+"Пророк ﷺ учил благодарности Аллаху за все дары.",
+"Он обращался к мусульманам с милостью и мудростью.",
+"Пророк ﷺ учил правильному поведению в обществе.",
+"Он проявлял щедрость и заботу о нуждающихся.",
+"Пророк ﷺ говорил о важности образования и знаний.",
+"Он учил, как читать Коран с тажвидом.",
+"Пророк ﷺ учил уважать договоры и обещания.",
+"Он наставлял о морали и этике в повседневной жизни.",
+"Пророк ﷺ подчеркивал важность чистого сердца и намерений.",
+"Он был образцом смирения и благодарности Аллаху.",
+"Пророк ﷺ учил справедливости в суде и семье.",
+"Он наставлял, как правильно делать дуа и зикр.",
+"Пророк ﷺ учил соблюдать законы Аллаха и уважать законы общества.",
+"Он говорил о важности уважения и дружбы среди людей.",
+"Пророк ﷺ показывал пример терпения в трудностях.",
+"Он учил заботиться о здоровье и чистоте тела.",
+"Пророк ﷺ поощрял добрые отношения с соседями и обществом.",
+"Он наставлял, как вести себя при путешествиях и встречах.",
+"Пророк ﷺ учил проявлять сострадание к всем созданиям.",
+"Он наставлял на честное ведение бизнеса и торговли.",
+"Пророк ﷺ учил смирению, скромности и благочестию."
+];
+
+let currentProphetFact = 0;
+
+function showProphetFact(){
+  document.getElementById("prophetFactBox").innerText = prophetFacts[currentProphetFact];
+  document.getElementById("prophetFactCounter").innerText = (currentProphetFact+1) + " / " + prophetFacts.length;
+}
+
+function nextProphetFact(){
+  if(currentProphetFact < prophetFacts.length - 1) currentProphetFact++;
+  else currentProphetFact = 0;
+  showProphetFact();
+}
+
+function prevProphetFact(){
+  if(currentProphetFact > 0) currentProphetFact--;
+  else currentProphetFact = prophetFacts.length - 1;
+  showProphetFact();
+}
+
+// Показываем первый факт сразу
+showProphetFact();
+</script>
